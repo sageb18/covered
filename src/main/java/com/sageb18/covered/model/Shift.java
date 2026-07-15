@@ -1,14 +1,26 @@
 package com.sageb18.covered.model;
 
+import jakarta.persistence.*;
+
 import java.time.LocalDateTime;
 import java.util.Objects;
 import java.util.UUID;
 
+@Entity
+@Table(name = "Shift")
 public class Shift {
 
+    @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
+
+    @Column(nullable = false)
     private LocalDateTime start;
+
+    @Column(nullable = false)
     private LocalDateTime end;
+
+    @Column(nullable = false)
     private String requiredSkill;
 
     public Shift() {
