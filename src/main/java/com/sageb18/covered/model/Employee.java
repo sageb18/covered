@@ -32,21 +32,12 @@ public class Employee {
     public Employee() {
     }
 
-    public Employee(UUID id, String email, String passwordHash, String firstName, String lastName, Role role) {
-        this.id = id;
+    public Employee(String email, String passwordHash, String firstName, String lastName, Role role) {
         this.email = email;
         this.passwordHash = passwordHash;
         this.firstName = firstName;
         this.lastName = lastName;
         this.role = role;
-    }
-
-    public UUID getId() {
-        return id;
-    }
-
-    public void setId(UUID id) {
-        this.id = id;
     }
 
     public String getEmail() {
@@ -93,18 +84,17 @@ public class Employee {
     public boolean equals(Object o) {
         if (o == null || getClass() != o.getClass()) return false;
         Employee employee = (Employee) o;
-        return Objects.equals(id, employee.id) && Objects.equals(email, employee.email) && Objects.equals(passwordHash, employee.passwordHash) && Objects.equals(firstName, employee.firstName) && Objects.equals(lastName, employee.lastName) && role == employee.role;
+        return Objects.equals(id, employee.id);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, email, passwordHash, firstName, lastName, role);
+        return Objects.hashCode(id);
     }
 
     @Override
     public String toString() {
         return "Employee{" +
-                "id=" + id +
                 ", email='" + email + '\'' +
                 ", passwordHash='" + passwordHash + '\'' +
                 ", firstName='" + firstName + '\'' +
