@@ -2,6 +2,7 @@ package com.sageb18.covered.model;
 
 import jakarta.persistence.*;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
@@ -15,6 +16,14 @@ public class UnavailabilityWindow {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "employee_id", nullable = false)
     private Employee employee;
+
+    @Column(nullable = false)
+    private LocalDateTime UnavailabilityStartTime;
+
+    @Column(nullable = false)
+    private LocalDateTime UnavailabilityEndTime;
+
+
 
 
 }
