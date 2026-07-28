@@ -2,7 +2,7 @@ package com.sageb18.covered.model;
 
 import jakarta.persistence.*;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -15,10 +15,10 @@ public class Shift {
     private UUID id;
 
     @Column(nullable = false)
-    private LocalDateTime start;
+    private Instant start;
 
     @Column(nullable = false)
-    private LocalDateTime end;
+    private Instant end;
 
     @Column(nullable = false)
     private String requiredSkill;
@@ -26,7 +26,7 @@ public class Shift {
     public Shift() {
     }
 
-    public Shift(UUID id, LocalDateTime start, LocalDateTime end, String requiredSkill) {
+    public Shift(UUID id, Instant start, Instant end, String requiredSkill) {
         this.id = id;
         this.start = start;
         this.end = end;
@@ -37,11 +37,11 @@ public class Shift {
         return id;
     }
 
-    public LocalDateTime getStart() {
+    public Instant getStart() {
         return start;
     }
 
-    public LocalDateTime getEnd() {
+    public Instant getEnd() {
         return end;
     }
 

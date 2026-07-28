@@ -25,6 +25,8 @@ public class ScheduleConstraintProvider implements ConstraintProvider {
                 // ^^^ Lambda that runs once per assignment, returns a bool
                 // "true" = rule is broken, "false" = rule not broken
                 .penalize(HardSoftScore.ONE_HARD)
+                // ^^ anything that survived the filter costs "ONE HARD" point,
+                // Hard = invalid schedule and must be fixed before Timefold optimizes anything
                 .asConstraint("Missing required skill");
     }
 }

@@ -2,6 +2,7 @@ package com.sageb18.covered.model;
 
 import jakarta.persistence.*;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -18,10 +19,10 @@ public class UnavailabilityWindow {
     private Employee employee;
 
     @Column(nullable = false)
-    private LocalDateTime UnavailabilityStartTime;
+    private Instant UnavailabilityStartTime;
 
     @Column(nullable = false)
-    private LocalDateTime UnavailabilityEndTime;
+    private Instant UnavailabilityEndTime;
 
 
 
