@@ -1,4 +1,4 @@
-package com.sageb18.covered.solver;
+package com.sageb18.covered.model;
 
 import ai.timefold.solver.core.api.domain.solution.PlanningEntityCollectionProperty;
 import ai.timefold.solver.core.api.domain.solution.PlanningScore;
@@ -6,9 +6,6 @@ import ai.timefold.solver.core.api.domain.solution.PlanningSolution;
 import ai.timefold.solver.core.api.domain.solution.ProblemFactCollectionProperty;
 import ai.timefold.solver.core.api.domain.valuerange.ValueRangeProvider;
 import ai.timefold.solver.core.api.score.buildin.hardsoft.HardSoftScore;
-import com.sageb18.covered.model.Employee;
-import com.sageb18.covered.model.ShiftAssignment;
-import com.sageb18.covered.model.UnavailabilityWindow;
 
 import java.util.List;
 

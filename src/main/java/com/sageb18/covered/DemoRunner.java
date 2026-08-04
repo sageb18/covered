@@ -6,8 +6,7 @@ import com.sageb18.covered.model.Employee;
 import com.sageb18.covered.model.Role;
 import com.sageb18.covered.model.Shift;
 import com.sageb18.covered.model.ShiftAssignment;
-import com.sageb18.covered.model.UnavailabilityWindow;
-import com.sageb18.covered.solver.Schedule;
+import com.sageb18.covered.model.Schedule;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
