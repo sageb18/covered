@@ -49,4 +49,8 @@ public class Schedule {
     public HardSoftScore getScore() {
         return score;
     }
+
+    public void setScore(HardSoftScore score) {
+        this.score = score;
+    }
 }

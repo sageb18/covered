@@ -17,7 +17,7 @@ public class Shift {
     @Column(nullable = false)
     private Instant start;
 
-    @Column(nullable = false)
+    @Column(name = "end_time", nullable = false)
     private Instant end;
 
     @Column(nullable = false)

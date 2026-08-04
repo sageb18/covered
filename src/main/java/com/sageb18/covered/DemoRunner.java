@@ -33,10 +33,8 @@ public class DemoRunner implements CommandLineRunner {
                 Set.of("CASHIER", "OPENER"), Role.EMPLOYEE);
         Employee bon = new Employee("bon@gmail.com", "hash", "Bon", "Jones", 28, 25,
                 Set.of("BARISTA", "CASHIER"), Role.EMPLOYEE);
-        Employee jaiden = new Employee("missjaideng@gmail.com", "hash", "Jaiden", "Galan", 19, 40,
-                Set.of("BARISTA", "CASHIER", "CLOSER", "OPENER"), Role.EMPLOYEE);
 
-        List<Employee> employees = List.of(sage, megu, bon, jaiden);
+        List<Employee> employees = List.of(sage, megu, bon);
 
         // Four shifts across two days requiring different skills
         Shift baristaMon = new Shift(UUID.randomUUID(),
