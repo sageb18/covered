@@ -8,6 +8,7 @@ import ai.timefold.solver.core.api.domain.valuerange.ValueRangeProvider;
 import ai.timefold.solver.core.api.score.buildin.hardsoft.HardSoftScore;
 import com.sageb18.covered.model.Employee;
 import com.sageb18.covered.model.ShiftAssignment;
+import com.sageb18.covered.model.UnavailabilityWindow;
 
 import java.util.List;
 
@@ -18,6 +19,9 @@ public class Schedule {
     @ProblemFactCollectionProperty
     private List<Employee> employees;
 
+    @ProblemFactCollectionProperty
+    private List<UnavailabilityWindow> unavailabilityWindows;
+
     @PlanningEntityCollectionProperty
     private List<ShiftAssignment> shiftAssignments;
 
@@ -27,13 +31,18 @@ public class Schedule {
     public Schedule() {
     }
 
-    public Schedule(List<Employee> employees, List<ShiftAssignment> shiftAssignments) {
+    public Schedule(List<Employee> employees, List<UnavailabilityWindow> unavailabilityWindows, List<ShiftAssignment> shiftAssignments) {
         this.employees = employees;
+        this.unavailabilityWindows = unavailabilityWindows;
         this.shiftAssignments = shiftAssignments;
     }
 
     public List<Employee> getEmployees() {
         return employees;
+    }
+
+    public List<UnavailabilityWindow> getUnavailabilityWindows() {
+        return unavailabilityWindows;
     }
 
     public List<ShiftAssignment> getShiftAssignments() {
@@ -43,5 +52,4 @@ public class Schedule {
     public HardSoftScore getScore() {
         return score;
     }
-
 }

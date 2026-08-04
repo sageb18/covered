@@ -26,7 +26,9 @@ public class Employee {
     @Column(nullable = false)
     private String lastName;
 
-    @Column(nullable = false)
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "employee_skills", joinColumns = @JoinColumn(name = "employee_id"))
+    @Column(name = "skill", nullable = false)
     private Set<String> skills;
 
     @Column(nullable = false)

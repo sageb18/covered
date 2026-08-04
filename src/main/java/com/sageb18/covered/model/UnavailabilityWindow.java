@@ -3,7 +3,6 @@ package com.sageb18.covered.model;
 import jakarta.persistence.*;
 
 import java.time.Instant;
-import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
@@ -19,12 +18,33 @@ public class UnavailabilityWindow {
     private Employee employee;
 
     @Column(nullable = false)
-    private Instant UnavailabilityStartTime;
+    private Instant unavailabilityStartTime;
 
     @Column(nullable = false)
-    private Instant UnavailabilityEndTime;
+    private Instant unavailabilityEndTime;
 
+    public UnavailabilityWindow() {
+    }
 
+    public UnavailabilityWindow(Employee employee, Instant unavailabilityStartTime, Instant unavailabilityEndTime) {
+        this.employee = employee;
+        this.unavailabilityStartTime = unavailabilityStartTime;
+        this.unavailabilityEndTime = unavailabilityEndTime;
+    }
 
+    public UUID getId() {
+        return id;
+    }
 
+    public Employee getEmployee() {
+        return employee;
+    }
+
+    public Instant getUnavailabilityStartTime() {
+        return unavailabilityStartTime;
+    }
+
+    public Instant getUnavailabilityEndTime() {
+        return unavailabilityEndTime;
+    }
 }
