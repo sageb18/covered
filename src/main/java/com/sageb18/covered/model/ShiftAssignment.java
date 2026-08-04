@@ -1,7 +1,7 @@
 package com.sageb18.covered.model;
 
 import ai.timefold.solver.core.api.domain.entity.PlanningEntity;
-import ai.timefold.solver.core.api.domain.lookup.PlanningId;
+import ai.timefold.solver.core.api.domain.common.PlanningId;
 import ai.timefold.solver.core.api.domain.variable.PlanningVariable;
 
 import java.util.UUID;

@@ -18,23 +18,25 @@ import java.util.UUID;
 @Component
 public class DemoRunner implements CommandLineRunner {
 
-    private final SolverManager<Schedule, UUID> solverManager;
+    private final SolverManager<Schedule> solverManager;
 
-    public DemoRunner(SolverManager<Schedule, UUID> solverManager) {
+    public DemoRunner(SolverManager<Schedule> solverManager) {
         this.solverManager = solverManager;
     }
 
     @Override
     public void run(String... args) throws Exception {
         // Three employees with different skill sets
-        Employee sage = new Employee("sage@gmail.com", "hash", "Taddeo", "Sage", 30, 20,
+        Employee sage = new Employee("sage@gmail.com", "hash", "Sage", "Taddeo", 30, 20,
                 Set.of("BARISTA", "CLOSER"), Role.EMPLOYEE);
         Employee megu = new Employee("megu@yahoo.com", "hash", "Megu", "Smith", 25, 30,
                 Set.of("CASHIER", "OPENER"), Role.EMPLOYEE);
         Employee bon = new Employee("bon@gmail.com", "hash", "Bon", "Jones", 28, 25,
                 Set.of("BARISTA", "CASHIER"), Role.EMPLOYEE);
+        Employee jaiden = new Employee("missjaideng@gmail.com", "hash", "Jaiden", "Galan", 19, 40,
+                Set.of("BARISTA", "CASHIER", "CLOSER", "OPENER"), Role.EMPLOYEE);
 
-        List<Employee> employees = List.of(sage, megu, bon);
+        List<Employee> employees = List.of(sage, megu, bon, jaiden);
 
         // Four shifts across two days requiring different skills
         Shift baristaMon = new Shift(UUID.randomUUID(),
@@ -57,7 +59,7 @@ public class DemoRunner implements CommandLineRunner {
         Schedule problem = new Schedule(employees, List.of(), assignments);
 
         System.out.println("=== SOLVING SCHEDULE ===");
-        SolverJob<Schedule, UUID> job = solverManager.solve(UUID.randomUUID(), problem);
+        SolverJob<Schedule> job = solverManager.solve(UUID.randomUUID(), problem);
         Schedule solution = job.getFinalBestSolution();
 
         System.out.println("=== RESULTS ===");
