@@ -22,9 +22,10 @@ public class DemoRunner implements CommandLineRunner {
     @Override
     public void run(String... args) throws Exception {
         // test list of employees
-        Employee sage = new Employee("sage@gmail.com", "hash", "Sage", "T", Role.EMPLOYEE);
-        sage.setSkills(Set.of("BARISTA", "CLOSER"));
+        Employee sage = new Employee(Role.EMPLOYEE, 30, 20, Set.of("BARISTA", "CLOSER"),
+                "Taddeo", "Sage", "hash", "sage@gmail.com");
         Employee megu = new Employee("megu@yahoo.com", );
+        Employee bon = new Em
 
         // test list of shifts needing different skills
 

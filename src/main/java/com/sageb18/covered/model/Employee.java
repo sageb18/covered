@@ -42,15 +42,15 @@ public class Employee {
     public Employee() {
     }
 
-    public Employee(Role role, int maxHours, int age, Set<String> skills, String lastName, String firstName, String passwordHash, String email) {
-        this.role = role;
-        this.maxHours = maxHours;
-        this.age = age;
-        this.skills = skills;
-        this.lastName = lastName;
-        this.firstName = firstName;
-        this.passwordHash = passwordHash;
+    public Employee(String email, String passwordHash, String firstName, String lastName, int age, int maxHours, Set<String> skills, Role role) {
         this.email = email;
+        this.passwordHash = passwordHash;
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.age = age;
+        this.maxHours = maxHours;
+        this.skills = skills;
+        this.role = role;
     }
 
     public UUID getId() {
