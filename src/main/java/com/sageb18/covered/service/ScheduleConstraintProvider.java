@@ -1,4 +1,4 @@
-package com.sageb18.covered.solver;
+package com.sageb18.covered.service;
 
 import ai.timefold.solver.core.api.score.HardSoftScore;
 import ai.timefold.solver.core.api.score.stream.Constraint;
