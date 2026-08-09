@@ -2,57 +2,38 @@ package com.sageb18.covered.model;
 
 import jakarta.persistence.*;
 
+import java.util.LinkedHashSet;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 
 @Entity
-@Table(name = "Employees")
+@Table(name = "employees")
 public class Employee {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @Column(nullable = false, unique = true, length = 50)
-    private String email;
-
     @Column(nullable = false)
-    private String passwordHash;
-
-    @Column(nullable = false)
-    private String firstName;
-
-    @Column(nullable = false)
-    private String lastName;
-
-    @ElementCollection(fetch = FetchType.EAGER)
-    @CollectionTable(name = "employee_skills", joinColumns = @JoinColumn(name = "employee_id"))
-    @Column(name = "skill", nullable = false)
-    private Set<String> skills;
-
-    @Column(nullable = false)
-    private int age;
+    private String name;
 
     @Column(nullable = false)
     private int maxHours;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 50)
-    private Role role = Role.EMPLOYEE;
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "employee_skills", joinColumns = @JoinColumn(name = "employee_id"))
+    @Column(name = "skill", nullable = false)
+    private Set<String> skills = new LinkedHashSet<>();
 
     public Employee() {
     }
 
-    public Employee(String email, String passwordHash, String firstName, String lastName, int age, int maxHours, Set<String> skills, Role role) {
-        this.email = email;
-        this.passwordHash = passwordHash;
-        this.firstName = firstName;
-        this.lastName = lastName;
-        this.age = age;
+    public Employee(UUID id, String name, int maxHours, Set<String> skills) {
+        this.id = id;
+        this.name = name;
         this.maxHours = maxHours;
-        this.skills = skills;
-        this.role = role;
+        setSkills(skills);
     }
 
     public UUID getId() {
@@ -63,52 +44,12 @@ public class Employee {
         this.id = id;
     }
 
-    public String getEmail() {
-        return email;
+    public String getName() {
+        return name;
     }
 
-    public void setEmail(String email) {
-        this.email = email;
-    }
-
-    public String getPasswordHash() {
-        return passwordHash;
-    }
-
-    public void setPasswordHash(String passwordHash) {
-        this.passwordHash = passwordHash;
-    }
-
-    public String getFirstName() {
-        return firstName;
-    }
-
-    public void setFirstName(String firstName) {
-        this.firstName = firstName;
-    }
-
-    public String getLastName() {
-        return lastName;
-    }
-
-    public void setLastName(String lastName) {
-        this.lastName = lastName;
-    }
-
-    public Set<String> getSkills() {
-        return skills;
-    }
-
-    public void setSkills(Set<String> skills) {
-        this.skills = skills;
-    }
-
-    public int getAge() {
-        return age;
-    }
-
-    public void setAge(int age) {
-        this.age = age;
+    public void setName(String name) {
+        this.name = name;
     }
 
     public int getMaxHours() {
@@ -119,23 +60,30 @@ public class Employee {
         this.maxHours = maxHours;
     }
 
-    public Role getRole() {
-        return role;
+    public Set<String> getSkills() {
+        return skills;
     }
 
-    public void setRole(Role role) {
-        this.role = role;
+    /** never leaves skills null, the required-skill constraint calls contains() on it */
+    public void setSkills(Set<String> skills) {
+        this.skills = (skills == null) ? new LinkedHashSet<>() : new LinkedHashSet<>(skills);
     }
 
     @Override
     public boolean equals(Object o) {
+        if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Employee employee = (Employee) o;
-        return Objects.equals(email, employee.email);
+        return id != null && id.equals(employee.id);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(email);
+        return Objects.hashCode(id);
+    }
+
+    @Override
+    public String toString() {
+        return name;
     }
 }

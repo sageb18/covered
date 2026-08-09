@@ -12,3 +12,6 @@ covered/target/
 # Env / secrets
 .env
 *.env
+
+## CLAUDE ##
+CLAUDE.md
