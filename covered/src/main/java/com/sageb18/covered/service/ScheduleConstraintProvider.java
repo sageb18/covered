@@ -27,7 +27,7 @@ public class ScheduleConstraintProvider implements ConstraintProvider {
                 .filter(assignment ->
                         !assignment.getEmployee().getSkills().contains(assignment.getShift().getRequiredSkill()))
                 .penalize(HardSoftScore.ONE_HARD)
-                .asConstraint("Missing required skill");
+                .asConstraint(ConstraintNames.MISSING_REQUIRED_SKILL);
     }
 
     // An employee cannot work two shifts that overlap in time.
@@ -36,7 +36,7 @@ public class ScheduleConstraintProvider implements ConstraintProvider {
                         Joiners.equal(ShiftAssignment::getEmployee))
                 .filter((a, b) -> a.getShift().overlaps(b.getShift()))
                 .penalize(HardSoftScore.ONE_HARD)
-                .asConstraint("Overlapping shifts");
+                .asConstraint(ConstraintNames.OVERLAPPING_SHIFTS);
     }
 
     // An employee's total assigned hours must not exceed their maxHours.
@@ -48,7 +48,7 @@ public class ScheduleConstraintProvider implements ConstraintProvider {
                 .filter((employee, totalMinutes) -> totalMinutes > employee.getMaxHours() * 60)
                 .penalize(HardSoftScore.ONE_HARD,
                         (employee, totalMinutes) -> totalMinutes - employee.getMaxHours() * 60)
-                .asConstraint("Max hours exceeded");
+                .asConstraint(ConstraintNames.MAX_HOURS_EXCEEDED);
     }
 
     // An employee cannot be assigned a shift during a window they marked unavailable.
@@ -58,6 +58,6 @@ public class ScheduleConstraintProvider implements ConstraintProvider {
                         Joiners.equal(ShiftAssignment::getEmployee, UnavailabilityWindow::getEmployee))
                 .filter((assignment, window) -> assignment.getShift().overlaps(window))
                 .penalize(HardSoftScore.ONE_HARD)
-                .asConstraint("Employee unavailable");
+                .asConstraint(ConstraintNames.EMPLOYEE_UNAVAILABLE);
     }
 }
