@@ -9,8 +9,6 @@ import ai.timefold.solver.core.api.score.stream.Joiners;
 import com.sageb18.covered.model.ShiftAssignment;
 import com.sageb18.covered.model.UnavailabilityWindow;
 
-import java.time.Duration;
-
 public class ScheduleConstraintProvider implements ConstraintProvider {
 
     @Override
@@ -27,7 +25,6 @@ public class ScheduleConstraintProvider implements ConstraintProvider {
     private Constraint requiredSkill(ConstraintFactory factory) {
         return factory.forEach(ShiftAssignment.class)
                 .filter(assignment ->
-                        assignment.getEmployee() != null &&
                         !assignment.getEmployee().getSkills().contains(assignment.getShift().getRequiredSkill()))
                 .penalize(HardSoftScore.ONE_HARD)
                 .asConstraint("Missing required skill");
@@ -37,36 +34,29 @@ public class ScheduleConstraintProvider implements ConstraintProvider {
     private Constraint noOverlappingShifts(ConstraintFactory factory) {
         return factory.forEachUniquePair(ShiftAssignment.class,
                         Joiners.equal(ShiftAssignment::getEmployee))
-                .filter((a, b) ->
-                        a.getEmployee() != null &&
-                        a.getShift().getStart().isBefore(b.getShift().getEnd()) &&
-                        b.getShift().getStart().isBefore(a.getShift().getEnd()))
+                .filter((a, b) -> a.getShift().overlaps(b.getShift()))
                 .penalize(HardSoftScore.ONE_HARD)
                 .asConstraint("Overlapping shifts");
     }
 
     // An employee's total assigned hours must not exceed their maxHours.
+    // Summed in minutes so half-hour shifts aren't truncated away.
     private Constraint maxHoursExceeded(ConstraintFactory factory) {
         return factory.forEach(ShiftAssignment.class)
-                .filter(a -> a.getEmployee() != null)
                 .groupBy(ShiftAssignment::getEmployee,
-                        ConstraintCollectors.sum(a -> (int) Duration.between(
-                                a.getShift().getStart(), a.getShift().getEnd()).toHours()))
-                .filter((employee, totalHours) -> totalHours > employee.getMaxHours())
+                        ConstraintCollectors.sum(a -> a.getShift().getDurationMinutes()))
+                .filter((employee, totalMinutes) -> totalMinutes > employee.getMaxHours() * 60)
                 .penalize(HardSoftScore.ONE_HARD,
-                        (employee, totalHours) -> totalHours - employee.getMaxHours())
+                        (employee, totalMinutes) -> totalMinutes - employee.getMaxHours() * 60)
                 .asConstraint("Max hours exceeded");
     }
 
     // An employee cannot be assigned a shift during a window they marked unavailable.
     private Constraint respectUnavailability(ConstraintFactory factory) {
         return factory.forEach(ShiftAssignment.class)
-                .filter(a -> a.getEmployee() != null)
                 .join(UnavailabilityWindow.class,
                         Joiners.equal(ShiftAssignment::getEmployee, UnavailabilityWindow::getEmployee))
-                .filter((assignment, window) ->
-                        assignment.getShift().getStart().isBefore(window.getUnavailabilityEndTime()) &&
-                        window.getUnavailabilityStartTime().isBefore(assignment.getShift().getEnd()))
+                .filter((assignment, window) -> assignment.getShift().overlaps(window))
                 .penalize(HardSoftScore.ONE_HARD)
                 .asConstraint("Employee unavailable");
     }

@@ -2,23 +2,28 @@ package com.sageb18.covered.model;
 
 import jakarta.persistence.*;
 
-import java.time.Instant;
+import java.time.DayOfWeek;
+import java.time.LocalTime;
 import java.util.Objects;
 import java.util.UUID;
 
 @Entity
-@Table(name = "Shift")
-public class Shift {
+@Table(name = "shifts")
+public class Shift implements WeeklyInterval {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @Column(nullable = false)
-    private Instant start;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "day_of_week", nullable = false, length = 16)
+    private DayOfWeek dayOfWeek;
+
+    @Column(name = "start_time", nullable = false)
+    private LocalTime start;
 
     @Column(name = "end_time", nullable = false)
-    private Instant end;
+    private LocalTime end;
 
     @Column(nullable = false)
     private String requiredSkill;
@@ -26,8 +31,9 @@ public class Shift {
     public Shift() {
     }
 
-    public Shift(UUID id, Instant start, Instant end, String requiredSkill) {
+    public Shift(UUID id, DayOfWeek dayOfWeek, LocalTime start, LocalTime end, String requiredSkill) {
         this.id = id;
+        this.dayOfWeek = dayOfWeek;
         this.start = start;
         this.end = end;
         this.requiredSkill = requiredSkill;
@@ -37,23 +43,51 @@ public class Shift {
         return id;
     }
 
-    public Instant getStart() {
+    public void setId(UUID id) {
+        this.id = id;
+    }
+
+    @Override
+    public DayOfWeek getDayOfWeek() {
+        return dayOfWeek;
+    }
+
+    public void setDayOfWeek(DayOfWeek dayOfWeek) {
+        this.dayOfWeek = dayOfWeek;
+    }
+
+    @Override
+    public LocalTime getStart() {
         return start;
     }
 
-    public Instant getEnd() {
+    public void setStart(LocalTime start) {
+        this.start = start;
+    }
+
+    @Override
+    public LocalTime getEnd() {
         return end;
+    }
+
+    public void setEnd(LocalTime end) {
+        this.end = end;
     }
 
     public String getRequiredSkill() {
         return requiredSkill;
     }
 
+    public void setRequiredSkill(String requiredSkill) {
+        this.requiredSkill = requiredSkill;
+    }
+
     @Override
     public boolean equals(Object o) {
+        if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Shift shift = (Shift) o;
-        return Objects.equals(id, shift.id);
+        return id != null && id.equals(shift.id);
     }
 
     @Override
@@ -63,6 +97,6 @@ public class Shift {
 
     @Override
     public String toString() {
-        return "Shift{" + requiredSkill + " " + start + " to " + end + "}";
+        return requiredSkill + " " + dayOfWeek + " " + start + "-" + end;
     }
 }
