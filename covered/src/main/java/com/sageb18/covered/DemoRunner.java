@@ -1,68 +1,59 @@
 package com.sageb18.covered;
 
-import ai.timefold.solver.core.api.solver.SolverJob;
-import ai.timefold.solver.core.api.solver.SolverManager;
-import com.sageb18.covered.model.Employee;
-import com.sageb18.covered.model.Schedule;
-import com.sageb18.covered.model.Shift;
-import com.sageb18.covered.model.ShiftAssignment;
-import com.sageb18.covered.model.UnavailabilityWindow;
+import com.sageb18.covered.dto.AssignmentDto;
+import com.sageb18.covered.dto.EmployeeDto;
+import com.sageb18.covered.dto.ShiftDto;
+import com.sageb18.covered.dto.SolveRequest;
+import com.sageb18.covered.dto.SolveResponse;
+import com.sageb18.covered.dto.ViolationDto;
+import com.sageb18.covered.service.DemoScenario;
+import com.sageb18.covered.service.SchedulingService;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
-import java.time.DayOfWeek;
-import java.time.LocalTime;
-import java.util.List;
-import java.util.Set;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
+/**
+ * Solves the demo scenario at startup and prints it. Runs only under the "demo" profile
+ * (./mvnw spring-boot:run -Dspring-boot.run.profiles=demo) -- it used to run on every
+ * boot, which cost five seconds of startup in production and in every test.
+ */
 @Component
+@Profile("demo")
 public class DemoRunner implements CommandLineRunner {
 
-    private final SolverManager<Schedule> solverManager;
+    private final SchedulingService schedulingService;
 
-    public DemoRunner(SolverManager<Schedule> solverManager) {
-        this.solverManager = solverManager;
+    public DemoRunner(SchedulingService schedulingService) {
+        this.schedulingService = schedulingService;
     }
 
     @Override
-    public void run(String... args) throws Exception {
-        Employee sage = new Employee(UUID.randomUUID(), "Sage", 20, Set.of("BARISTA", "CLOSER"));
-        Employee megu = new Employee(UUID.randomUUID(), "Megu", 30, Set.of("CASHIER", "OPENER"));
-        Employee bon = new Employee(UUID.randomUUID(), "Bon", 25, Set.of("BARISTA", "CASHIER"));
-
-        List<Employee> employees = List.of(sage, megu, bon);
-
-        // Bon can't work Monday mornings -- forces the BARISTA Monday shift onto Sage.
-        List<UnavailabilityWindow> unavailability = List.of(
-                new UnavailabilityWindow(bon, DayOfWeek.MONDAY, LocalTime.of(8, 0), LocalTime.of(12, 0)));
-
-        Shift baristaMon = new Shift(UUID.randomUUID(),
-                DayOfWeek.MONDAY, LocalTime.of(9, 0), LocalTime.of(17, 0), "BARISTA");
-        Shift cashierMon = new Shift(UUID.randomUUID(),
-                DayOfWeek.MONDAY, LocalTime.of(9, 0), LocalTime.of(17, 0), "CASHIER");
-        Shift closerMon = new Shift(UUID.randomUUID(),
-                DayOfWeek.MONDAY, LocalTime.of(17, 0), LocalTime.of(23, 0), "CLOSER");
-        Shift baristaTue = new Shift(UUID.randomUUID(),
-                DayOfWeek.TUESDAY, LocalTime.of(9, 0), LocalTime.of(17, 0), "BARISTA");
-
-        List<ShiftAssignment> assignments = List.of(
-                new ShiftAssignment(UUID.randomUUID(), baristaMon),
-                new ShiftAssignment(UUID.randomUUID(), cashierMon),
-                new ShiftAssignment(UUID.randomUUID(), closerMon),
-                new ShiftAssignment(UUID.randomUUID(), baristaTue)
-        );
-
-        Schedule problem = new Schedule(employees, unavailability, assignments);
+    public void run(String... args) {
+        SolveRequest request = DemoScenario.build();
 
         System.out.println("=== SOLVING SCHEDULE ===");
-        SolverJob<Schedule> job = solverManager.solve(UUID.randomUUID(), problem);
-        Schedule solution = job.getFinalBestSolution();
+        SolveResponse response = schedulingService.solve(request);
+
+        Map<UUID, String> employeeNames = request.employees().stream()
+                .collect(Collectors.toMap(EmployeeDto::id, EmployeeDto::name));
+        Map<UUID, String> shiftLabels = request.shifts().stream()
+                .collect(Collectors.toMap(ShiftDto::id,
+                        shift -> shift.requiredSkill() + " " + shift.dayOfWeek()
+                                + " " + shift.start() + "-" + shift.end()));
 
         System.out.println("=== RESULTS ===");
-        for (ShiftAssignment a : solution.getShiftAssignments()) {
-            System.out.println(a);
+        for (AssignmentDto assignment : response.assignments()) {
+            System.out.println(shiftLabels.get(assignment.shiftId()) + " -> "
+                    + employeeNames.getOrDefault(assignment.employeeId(), "UNASSIGNED"));
         }
-        System.out.println("Score: " + solution.getScore());
+        System.out.println("Score: " + response.hardScore() + "hard/" + response.softScore() + "soft"
+                + (response.feasible() ? " (feasible)" : " (INFEASIBLE)"));
+        for (ViolationDto violation : response.violations()) {
+            System.out.println("  " + violation.constraint() + " x" + violation.count());
+        }
     }
 }
