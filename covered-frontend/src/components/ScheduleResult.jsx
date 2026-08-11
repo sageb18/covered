@@ -30,14 +30,30 @@ function ScheduleResult({ result, employees, shifts }) {
       </h2>
 
       {!result.feasible && (
-        <div className="my-2 rounded border border-amber-300 bg-amber-50 p-3">
-          <p className="text-sm text-amber-900">
+        <div className="my-2 rounded border border-red-300 bg-red-50 p-3">
+          <p className="text-sm text-red-900">
             Closest attempt shown below. Broken rules:
           </p>
-          <ul className="mt-1 text-sm text-amber-900">
+          <ul className="mt-1 text-sm text-red-900">
             {result.violations.map((violation) => (
               <li key={violation.constraint}>
                 {violation.constraint} &times;{violation.count}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* Soft rules, so this can sit on a schedule that is perfectly usable. */}
+      {result.warnings?.length > 0 && (
+        <div className="my-2 rounded border border-amber-300 bg-amber-50 p-3">
+          <p className="text-sm text-amber-900">
+            {result.feasible ? 'Schedule works, but' : 'Also worth noting'}:
+          </p>
+          <ul className="mt-1 text-sm text-amber-900">
+            {result.warnings.map((warning) => (
+              <li key={warning.constraint}>
+                {warning.constraint} &times;{warning.count}
               </li>
             ))}
           </ul>

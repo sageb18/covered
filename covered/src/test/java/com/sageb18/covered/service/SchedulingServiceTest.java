@@ -33,12 +33,14 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  *
  * <p>The termination override keeps these fast: every scenario here is small enough that
  * the construction heuristic settles it immediately, so there is no reason to sit through
- * the production five-second budget.
+ * the production five-second budget. It cannot stop on a best score of 0hard/0soft the way
+ * it used to -- daily overtime is a soft constraint, so some scenarios here are optimal at
+ * a negative soft score and would never reach that limit.
  */
 @SpringBootTest
 @TestPropertySource(properties = {
         "timefold.solver.termination.spent-limit=1s",
-        "timefold.solver.termination.best-score-limit=0hard/0soft"
+        "timefold.solver.termination.unimproved-spent-limit=500ms"
 })
 class SchedulingServiceTest {
 
@@ -71,11 +73,14 @@ class SchedulingServiceTest {
         UUID cashierMon = UUID.randomUUID();
         UUID closerMon = UUID.randomUUID();
 
+        // Bon closes too. With Sage as the only CLOSER the closing shift would have to stack onto
+        // her eight-hour morning, and 14 hours in a day is now a hard breach -- so this scenario
+        // would be infeasible rather than the feasible one it is here to exercise.
         SolveRequest request = new SolveRequest(
                 List.of(
                         employee(SAGE, "Sage", 20, Set.of("BARISTA", "CLOSER"), List.of()),
                         employee(MEGU, "Megu", 30, Set.of("CASHIER"), List.of()),
-                        employee(BON, "Bon", 25, Set.of("BARISTA", "CASHIER"),
+                        employee(BON, "Bon", 25, Set.of("BARISTA", "CASHIER", "CLOSER"),
                                 List.of(new UnavailabilityDto(DayOfWeek.MONDAY,
                                         LocalTime.of(8, 0), LocalTime.of(12, 0))))),
                 List.of(
@@ -93,9 +98,12 @@ class SchedulingServiceTest {
         Map<UUID, UUID> assigned = assignmentsByShift(response);
         // Bon is unavailable Monday morning and Megu lacks BARISTA, so it must be Sage
         assertThat(assigned.get(baristaMon)).isEqualTo(SAGE);
-        // only Sage holds CLOSER
-        assertThat(assigned.get(closerMon)).isEqualTo(SAGE);
         assertThat(assigned.get(cashierMon)).isEqualTo(MEGU);
+        // Sage is already on eight hours, so the closing shift has to be Bon's
+        assertThat(assigned.get(closerMon)).isEqualTo(BON);
+        // and nobody ended up in overtime
+        assertThat(response.warnings()).isEmpty();
+        assertThat(response.softScore()).isZero();
     }
 
     @Test
@@ -216,16 +224,18 @@ class SchedulingServiceTest {
     }
 
     @Test
-    @DisplayName("touching shifts are not an overlap: 09-17 and 17-23 can be the same person")
+    @DisplayName("touching shifts are not an overlap: 09-13 and 13-17 can be the same person")
     void treatsIntervalsAsHalfOpen() {
         UUID morning = UUID.randomUUID();
         UUID evening = UUID.randomUUID();
 
+        // Four hours each: back-to-back, but still a standard day, so the only thing that could
+        // make this infeasible is the overlap rule -- which is what the test is about.
         SolveRequest request = new SolveRequest(
                 List.of(employee(SAGE, "Sage", 40, Set.of("BARISTA"), List.of())),
                 List.of(
-                        shift(morning, DayOfWeek.MONDAY, 9, 17, "BARISTA"),
-                        shift(evening, DayOfWeek.MONDAY, 17, 23, "BARISTA")));
+                        shift(morning, DayOfWeek.MONDAY, 9, 13, "BARISTA"),
+                        shift(evening, DayOfWeek.MONDAY, 13, 17, "BARISTA")));
 
         SolveResponse response = schedulingService.solve(request);
 
@@ -288,25 +298,172 @@ class SchedulingServiceTest {
                 .hasMessageContaining("Duplicate shift id");
     }
 
+    // --- the daily hours ceiling -------------------------------------------------
+    //
+    // A standard day is 8h. Past that is overtime: allowed, but penalised as soft, up to a
+    // 2h grace. Past 10h it is a hard breach. These are per-day, unlike maxHours.
+
+    @Test
+    @DisplayName("a standard eight-hour day is not overtime")
+    void standardDayIsNotOvertime() {
+        SolveRequest request = new SolveRequest(
+                List.of(employee(SAGE, "Sage", 40, Set.of("BARISTA"), List.of())),
+                List.of(shift(UUID.randomUUID(), DayOfWeek.MONDAY, 9, 17, "BARISTA")));
+
+        SolveResponse response = schedulingService.solve(request);
+
+        assertThat(response.feasible()).isTrue();
+        assertThat(response.softScore()).isZero();
+        assertThat(response.warnings()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("nine hours is allowed, but warns and costs one hour of soft score")
+    void allowsOvertimeInsideGrace() {
+        SolveRequest request = new SolveRequest(
+                List.of(employee(SAGE, "Sage", 40, Set.of("BARISTA"), List.of())),
+                List.of(shift(UUID.randomUUID(), DayOfWeek.MONDAY, 9, 18, "BARISTA")));
+
+        SolveResponse response = schedulingService.solve(request);
+
+        assertThat(response.feasible()).isTrue();
+        assertThat(response.violations()).isEmpty();
+        // the schedule is usable, so the overtime is a warning rather than a violation
+        assertThat(response.warnings())
+                .singleElement()
+                .satisfies(warning -> {
+                    assertThat(warning.constraint()).isEqualTo("Daily overtime");
+                    assertThat(warning.count()).isEqualTo(1);
+                });
+        assertThat(response.softScore()).isEqualTo(-60);
+    }
+
+    @Test
+    @DisplayName("ten hours sits exactly on the ceiling: still allowed, full grace penalty")
+    void allowsExactlyTheCeiling() {
+        SolveRequest request = new SolveRequest(
+                List.of(employee(SAGE, "Sage", 40, Set.of("BARISTA"), List.of())),
+                List.of(shift(UUID.randomUUID(), DayOfWeek.MONDAY, 9, 19, "BARISTA")));
+
+        SolveResponse response = schedulingService.solve(request);
+
+        assertThat(response.feasible()).isTrue();
+        assertThat(response.violations()).isEmpty();
+        assertThat(response.softScore()).isEqualTo(-120);
+    }
+
+    @Test
+    @DisplayName("eleven hours in a day is a hard breach, even well under maxHours")
+    void rejectsDayPastTheCeiling() {
+        // 11h of work but a 40h weekly cap, so only the daily rule can catch this
+        SolveRequest request = new SolveRequest(
+                List.of(employee(SAGE, "Sage", 40, Set.of("BARISTA"), List.of())),
+                List.of(
+                        shift(UUID.randomUUID(), DayOfWeek.MONDAY, 9, 14, "BARISTA"),
+                        shift(UUID.randomUUID(), DayOfWeek.MONDAY, 14, 20, "BARISTA")));
+
+        SolveResponse response = schedulingService.solve(request);
+
+        assertThat(response.feasible()).isFalse();
+        assertThat(response.violations())
+                .extracting(ViolationDto::constraint)
+                .contains("Daily hours exceeded")
+                .doesNotContain("Max hours exceeded");
+        // one hour past the ceiling
+        assertThat(response.hardScore()).isEqualTo(-60);
+    }
+
+    @Test
+    @DisplayName("a day past the ceiling is both over the limit and in overtime, and says so")
+    void pastTheCeilingReportsBothWarningAndViolation() {
+        // the 14-hour Monday the demo used to produce: 8h barista then 6h closer
+        SolveRequest request = new SolveRequest(
+                List.of(employee(SAGE, "Sage", 40, Set.of("BARISTA", "CLOSER"), List.of())),
+                List.of(
+                        shift(UUID.randomUUID(), DayOfWeek.MONDAY, 9, 17, "BARISTA"),
+                        shift(UUID.randomUUID(), DayOfWeek.MONDAY, 17, 23, "CLOSER")));
+
+        SolveResponse response = schedulingService.solve(request);
+
+        assertThat(response.feasible()).isFalse();
+        assertThat(response.violations())
+                .extracting(ViolationDto::constraint)
+                .contains("Daily hours exceeded");
+        assertThat(response.warnings())
+                .extracting(ViolationDto::constraint)
+                .contains("Daily overtime");
+        // the soft penalty stops at the grace, it does not keep climbing past the ceiling
+        assertThat(response.softScore()).isEqualTo(-120);
+    }
+
+    @Test
+    @DisplayName("the ceiling is per day, not per week: 8h Monday plus 8h Tuesday is fine")
+    void ceilingIsPerDay() {
+        SolveRequest request = new SolveRequest(
+                List.of(employee(SAGE, "Sage", 40, Set.of("BARISTA"), List.of())),
+                List.of(
+                        shift(UUID.randomUUID(), DayOfWeek.MONDAY, 9, 17, "BARISTA"),
+                        shift(UUID.randomUUID(), DayOfWeek.TUESDAY, 9, 17, "BARISTA")));
+
+        SolveResponse response = schedulingService.solve(request);
+
+        // 16h total would breach a 10h ceiling if the rule ignored which day the work fell on
+        assertThat(response.feasible()).isTrue();
+        assertThat(response.warnings()).isEmpty();
+        assertThat(response.softScore()).isZero();
+    }
+
+    @Test
+    @DisplayName("the solver spreads work to avoid overtime it does not have to incur")
+    void prefersSpreadingWorkOverOvertime() {
+        UUID first = UUID.randomUUID();
+        UUID second = UUID.randomUUID();
+
+        // Two 5h shifts on one day. Stacking both on one person is legal -- 10h is exactly the
+        // ceiling -- but costs 2h of soft score, and there is a second barista free. Nothing hard
+        // forces the split, so only soft optimisation can find it.
+        SolveRequest request = new SolveRequest(
+                List.of(
+                        employee(SAGE, "Sage", 40, Set.of("BARISTA"), List.of()),
+                        employee(MEGU, "Megu", 40, Set.of("BARISTA"), List.of())),
+                List.of(
+                        shift(first, DayOfWeek.MONDAY, 9, 14, "BARISTA"),
+                        shift(second, DayOfWeek.MONDAY, 14, 19, "BARISTA")));
+
+        SolveResponse response = schedulingService.solve(request);
+
+        assertThat(response.feasible()).isTrue();
+        assertThat(response.softScore()).isZero();
+        assertThat(response.warnings()).isEmpty();
+        Map<UUID, UUID> assigned = assignmentsByShift(response);
+        assertThat(assigned.get(first)).isNotEqualTo(assigned.get(second));
+    }
+
     /**
      * The drift guard. ScheduleExplainer restates the rules that ScheduleConstraintProvider
      * gives the solver, so the two can fall out of step. They cannot disagree about whether
      * anything is broken at all: an empty violations list must mean a zero hard score, and a
-     * negative hard score must come with at least one violation. If a constraint is ever
-     * added or changed in only one of the two files, one of these scenarios fails.
+     * negative hard score must come with at least one violation. The same has to hold for the
+     * soft side, between warnings and the soft score. If a constraint is ever added or changed
+     * in only one of the two files, one of these scenarios fails.
      */
     @ParameterizedTest(name = "explainer agrees with solver: {0}")
     @MethodSource("everyScenario")
-    @DisplayName("violations are empty exactly when the schedule is feasible")
+    @DisplayName("violations and warnings are empty exactly when the matching score is zero")
     void explainerAgreesWithSolver(String name, SolveRequest request) {
         SolveResponse response = schedulingService.solve(request);
 
         assertThat(response.violations().isEmpty())
                 .as("hardScore was %d but violations were %s", response.hardScore(), response.violations())
                 .isEqualTo(response.hardScore() == 0);
+        assertThat(response.warnings().isEmpty())
+                .as("softScore was %d but warnings were %s", response.softScore(), response.warnings())
+                .isEqualTo(response.softScore() == 0);
         assertThat(response.feasible()).isEqualTo(response.hardScore() == 0);
         assertThat(response.violations())
                 .allSatisfy(violation -> assertThat(violation.count()).isPositive());
+        assertThat(response.warnings())
+                .allSatisfy(warning -> assertThat(warning.count()).isPositive());
     }
 
     static Stream<Arguments> everyScenario() {
@@ -344,6 +501,15 @@ class SchedulingServiceTest {
                                         LocalTime.of(0, 0), LocalTime.of(23, 59))))),
                         List.of(shift(a, DayOfWeek.MONDAY, 9, 17, "BARISTA"),
                                 shift(b, DayOfWeek.MONDAY, 10, 18, "BARISTA")))),
+
+                Arguments.of("overtime inside the grace band", new SolveRequest(
+                        List.of(employee(SAGE, "Sage", 40, Set.of("BARISTA"), List.of())),
+                        List.of(shift(a, DayOfWeek.MONDAY, 9, 18, "BARISTA")))),
+
+                Arguments.of("forced past the daily ceiling", new SolveRequest(
+                        List.of(employee(SAGE, "Sage", 40, Set.of("BARISTA"), List.of())),
+                        List.of(shift(a, DayOfWeek.MONDAY, 9, 15, "BARISTA"),
+                                shift(b, DayOfWeek.MONDAY, 15, 21, "BARISTA")))),
 
                 Arguments.of("comfortably feasible three-person week", new SolveRequest(
                         List.of(

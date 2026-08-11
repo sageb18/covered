@@ -17,9 +17,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
- * Solves the demo scenario at startup and prints it. Runs only under the "demo" profile
- * (./mvnw spring-boot:run -Dspring-boot.run.profiles=demo) -- it used to run on every
- * boot, which cost five seconds of startup in production and in every test.
+ * Solves the demo scenario at startup and prints it.
  */
 @Component
 @Profile("demo")
@@ -53,7 +51,10 @@ public class DemoRunner implements CommandLineRunner {
         System.out.println("Score: " + response.hardScore() + "hard/" + response.softScore() + "soft"
                 + (response.feasible() ? " (feasible)" : " (INFEASIBLE)"));
         for (ViolationDto violation : response.violations()) {
-            System.out.println("  " + violation.constraint() + " x" + violation.count());
+            System.out.println("  BROKEN  " + violation.constraint() + " x" + violation.count());
+        }
+        for (ViolationDto warning : response.warnings()) {
+            System.out.println("  WARNING " + warning.constraint() + " x" + warning.count());
         }
     }
 }

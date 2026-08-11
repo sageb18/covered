@@ -108,11 +108,14 @@ public class SchedulingService {
                         assignment.getEmployee() == null ? null : assignment.getEmployee().getId()))
                 .toList();
 
+        ScheduleExplainer.Explanation explanation = scheduleExplainer.explain(solution);
+
         return new SolveResponse(
                 score.hardScore() == 0,
                 score.hardScore(),
                 score.softScore(),
                 assignments,
-                scheduleExplainer.explain(solution));
+                explanation.violations(),
+                explanation.warnings());
     }
 }
