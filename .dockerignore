@@ -1,0 +1,24 @@
+# The Docker build context is the repo root, so anything not excluded here gets
+# uploaded to the builder on every deploy. Keep it to actual source.
+
+.git/
+.gitignore
+
+# IDE
+.idea/
+**/*.iml
+**/.claude/
+
+# Build output - the image rebuilds all of this from source, and copying a
+# Windows-built node_modules into a Linux image would break the native binaries.
+covered/target/
+covered-frontend/node_modules/
+covered-frontend/dist/
+
+# Never let secrets into an image layer
+.env
+*.env
+
+CLAUDE.md
+**/HELP.md
+**/README.md

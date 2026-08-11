@@ -47,6 +47,11 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-validation</artifactId>
 		</dependency>
+		<!-- Supplies /actuator/health, which Render uses as its health check. -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-actuator</artifactId>
+		</dependency>
 		<!-- ConstraintVerifier lives in timefold-solver-core as of Timefold 2.x,
 		     so constraint tests need no extra dependency. -->
 		<dependency>
@@ -54,9 +59,18 @@
 			<artifactId>spring-boot-starter-test</artifactId>
 			<scope>test</scope>
 		</dependency>
+		<!-- Local/test database. With no spring.datasource.url configured, Spring Boot
+		     sees an embedded driver on the classpath and wires up in-memory H2. -->
 		<dependency>
 			<groupId>com.h2database</groupId>
 			<artifactId>h2</artifactId>
+			<scope>runtime</scope>
+		</dependency>
+		<!-- Deployed database. Having the driver present changes nothing on its own;
+		     it only gets used once SPRING_DATASOURCE_URL points at a Postgres. -->
+		<dependency>
+			<groupId>org.postgresql</groupId>
+			<artifactId>postgresql</artifactId>
 			<scope>runtime</scope>
 		</dependency>
 	</dependencies>

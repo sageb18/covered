@@ -1,0 +1,54 @@
+# Render Blueprint. Committing this means the service is defined in the repo
+# instead of in dashboard clicks - point Render at the repo once ("New +" ->
+# "Blueprint") and it reads this file.
+#
+# The two settings that matter most and are easy to get wrong:
+#   dockerContext: .        -> the build can see BOTH covered/ and covered-frontend/
+#   dockerfilePath: ./Dockerfile -> the root Dockerfile, not covered/Dockerfile
+
+services:
+  - type: web
+    name: covered
+    runtime: docker
+    plan: free
+    region: oregon
+    dockerContext: .
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /actuator/health
+    autoDeploy: true
+    envVars:
+      # Free instances get 512MB. Leave headroom under the cap so the container
+      # is not OOM-killed mid-solve.
+      - key: JAVA_OPTS
+        value: -XX:MaxRAMPercentage=70.0
+
+# ---------------------------------------------------------------------------
+# Postgres - not enabled yet, because nothing in the app persists anything.
+# There are no repositories, and /api/solve is stateless. The app boots on
+# in-memory H2 and works fine.
+#
+# When you add repositories and want real persistence, uncomment the block
+# below AND the three envVars above it, then redeploy.
+#
+# The gotcha: Render's `connectionString` is postgresql://user:pass@host/db,
+# which JDBC cannot parse. Spring needs a jdbc: URL with credentials passed
+# separately, which is why the URL is built from host/port/database below
+# rather than taken from connectionString.
+# ---------------------------------------------------------------------------
+#
+#      - key: SPRING_DATASOURCE_URL
+#        value: jdbc:postgresql://HOST:PORT/DATABASE   # copy from the dashboard
+#      - key: SPRING_DATASOURCE_USERNAME
+#        fromDatabase:
+#          name: covered-db
+#          property: user
+#      - key: SPRING_DATASOURCE_PASSWORD
+#        fromDatabase:
+#          name: covered-db
+#          property: password
+#
+# databases:
+#   - name: covered-db
+#     plan: free
+#     databaseName: covered
+#     user: covered
