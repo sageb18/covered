@@ -1,15 +1,16 @@
 function ShiftCard({ shift, onRemove }) {
   return (
-    <li className="flex items-center justify-between gap-2 rounded border p-3">
+    <li className="flex items-start justify-between gap-3 rounded-xl border border-line bg-surface p-5">
       <div>
-        <span className="font-medium">{shift.requiredSkill}</span>
-        <span className="ml-2 text-sm text-gray-600">
-          {shift.dayOfWeek} {shift.start}-{shift.end}
-        </span>
+        <div className="font-medium text-fg">{shift.requiredSkill}</div>
+        <div className="mt-0.5 text-sm text-fg-muted">
+          <span className="text-fg-subtle">{shift.dayOfWeek}</span>{' '}
+          {shift.start}–{shift.end}
+        </div>
       </div>
       <button
         onClick={() => onRemove(shift.id)}
-        className="text-sm text-gray-500 hover:text-red-700"
+        className="text-sm text-fg-muted transition-colors hover:text-red"
       >
         Remove
       </button>
