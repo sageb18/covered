@@ -8,7 +8,6 @@ function ShiftForm({ onAdd }) {
   const [requiredSkill, setRequiredSkill] = useState('')
 
   const skill = normaliseSkill(requiredSkill)
-  // string compare works because <input type="time"> always gives zero-padded HH:mm
   const canSubmit = skill !== '' && start < end
 
   function handleSubmit(event) {
@@ -20,12 +19,15 @@ function ShiftForm({ onAdd }) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="mb-3 flex flex-col gap-2 rounded border p-3">
+    <form
+      onSubmit={handleSubmit}
+      className="mb-4 flex flex-col gap-3 rounded-xl border border-line bg-surface p-5"
+    >
       <div className="flex gap-2">
         <select
           value={dayOfWeek}
           onChange={(event) => setDayOfWeek(event.target.value)}
-          className="rounded border px-2 py-1"
+          className="input min-w-0 flex-1"
           aria-label="Day of week"
         >
           {DAYS.map((day) => (
@@ -36,14 +38,14 @@ function ShiftForm({ onAdd }) {
           value={start}
           onChange={(event) => setStart(event.target.value)}
           type="time"
-          className="rounded border px-2 py-1"
+          className="input"
           aria-label="Start time"
         />
         <input
           value={end}
           onChange={(event) => setEnd(event.target.value)}
           type="time"
-          className="rounded border px-2 py-1"
+          className="input"
           aria-label="End time"
         />
       </div>
@@ -51,16 +53,12 @@ function ShiftForm({ onAdd }) {
         value={requiredSkill}
         onChange={(event) => setRequiredSkill(event.target.value)}
         placeholder="Required skill (e.g. barista)"
-        className="rounded border px-2 py-1"
+        className="input"
       />
       {start >= end && (
-        <p className="text-sm text-amber-700">End time must be after start time.</p>
+        <p className="text-sm text-amber">End time must be after start time.</p>
       )}
-      <button
-        type="submit"
-        disabled={!canSubmit}
-        className="self-start rounded border px-3 py-1 hover:bg-gray-100 disabled:opacity-40"
-      >
+      <button type="submit" disabled={!canSubmit} className="btn-secondary self-start">
         Add shift
       </button>
     </form>

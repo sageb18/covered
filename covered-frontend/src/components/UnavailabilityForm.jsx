@@ -15,11 +15,14 @@ function UnavailabilityForm({ onAdd }) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="mt-2 flex flex-wrap items-center gap-1">
+    <form
+      onSubmit={handleSubmit}
+      className="mt-4 flex flex-wrap items-center gap-1.5 border-t border-line pt-4"
+    >
       <select
         value={dayOfWeek}
         onChange={(event) => setDayOfWeek(event.target.value)}
-        className="rounded border px-1 py-0.5 text-xs"
+        className="input px-2 py-1 text-xs"
         aria-label="Unavailable day"
       >
         {DAYS.map((day) => (
@@ -30,20 +33,20 @@ function UnavailabilityForm({ onAdd }) {
         value={start}
         onChange={(event) => setStart(event.target.value)}
         type="time"
-        className="rounded border px-1 py-0.5 text-xs"
+        className="input px-2 py-1 text-xs"
         aria-label="Unavailable from"
       />
       <input
         value={end}
         onChange={(event) => setEnd(event.target.value)}
         type="time"
-        className="rounded border px-1 py-0.5 text-xs"
+        className="input px-2 py-1 text-xs"
         aria-label="Unavailable until"
       />
       <button
         type="submit"
         disabled={!canSubmit}
-        className="rounded border px-2 py-0.5 text-xs hover:bg-gray-100 disabled:opacity-40"
+        className="btn-secondary px-3 py-1 text-xs"
       >
         Add unavailability
       </button>

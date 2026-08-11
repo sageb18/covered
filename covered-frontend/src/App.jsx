@@ -8,7 +8,6 @@ import ShiftForm from './components/ShiftForm'
 import ScheduleResult from './components/ScheduleResult'
 
 function App() {
-  // employees is already the exact shape /api/solve expects, unavailability nested inside
   const [employees, setEmployees] = useState([])
   const [shifts, setShifts] = useState([])
   const [result, setResult] = useState(null)
@@ -41,9 +40,6 @@ function App() {
     }
   }
 
-  // Every edit below clears the result: a schedule for a team that has since changed is
-  // worse than no schedule, because it looks current.
-
   function addEmployee(employee) {
     setEmployees([...employees, employee])
     setResult(null)
@@ -54,9 +50,6 @@ function App() {
     setResult(null)
   }
 
-  // The nested shape's one awkward case: a new employees array, a new object for the one
-  // employee, and a new unavailability array inside it. Everyone else is passed through
-  // untouched, so React only re-renders the card that actually changed.
   function addUnavailability(employeeId, window) {
     setEmployees(employees.map((employee) =>
       employee.id === employeeId
@@ -89,42 +82,40 @@ function App() {
   const canSolve = employees.length > 0 && shifts.length > 0 && !isSolving
 
   return (
-    <div className="mx-auto max-w-4xl p-6 font-sans">
-      <h1 className="text-2xl font-bold">Covered</h1>
-      <p className="text-gray-600">Schedule solver</p>
-
-      <div className="my-4 flex gap-2">
-        <button
-          onClick={handleLoadExample}
-          className="rounded border px-3 py-1 hover:bg-gray-100"
-        >
-          Load example
-        </button>
-        <button
-          onClick={handleSolve}
-          disabled={!canSolve}
-          className="rounded border px-3 py-1 hover:bg-gray-100 disabled:opacity-40"
-        >
-          {isSolving ? 'Solving...' : 'Generate schedule'}
-        </button>
-      </div>
+    <div className="mx-auto max-w-5xl px-6 py-10 font-sans">
+      <header className="flex flex-wrap items-end justify-between gap-4 border-b border-line pb-6">
+        <div>
+          <h1 className="text-2xl font-medium text-fg">Covered</h1>
+          <p className="mt-1 text-fg-muted">Schedule solver</p>
+        </div>
+        <div className="flex gap-2">
+          <button onClick={handleLoadExample} className="btn-secondary">
+            Load example
+          </button>
+          <button onClick={handleSolve} disabled={!canSolve} className="btn-primary">
+            {isSolving ? 'Solving…' : 'Generate schedule'}
+          </button>
+        </div>
+      </header>
 
       {error && (
-        <p className="my-2 rounded border border-red-300 bg-red-50 p-2 text-red-800">
+        <p className="mt-6 rounded-xl border border-red/40 bg-red/10 p-4 text-sm text-fg">
           {error}
         </p>
       )}
 
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className="mt-8 grid gap-8 md:grid-cols-2">
         <section>
-          <h2 className="mb-2 text-lg font-semibold">
-            Team <span className="text-sm font-normal text-gray-600">({employees.length})</span>
+          <h2 className="mb-3 text-lg font-medium text-fg">
+            Team <span className="text-sm text-fg-subtle">({employees.length})</span>
           </h2>
           <EmployeeForm onAdd={addEmployee} />
           {employees.length === 0 ? (
-            <p className="text-sm text-gray-500">No employees yet.</p>
+            <p className="rounded-xl border border-dashed border-line bg-raised p-6 text-center text-sm text-fg-subtle">
+              No employees yet.
+            </p>
           ) : (
-            <ul className="flex flex-col gap-2">
+            <ul className="flex flex-col gap-4">
               {employees.map((employee) => (
                 <EmployeeCard
                   key={employee.id}
@@ -139,14 +130,16 @@ function App() {
         </section>
 
         <section>
-          <h2 className="mb-2 text-lg font-semibold">
-            Shifts <span className="text-sm font-normal text-gray-600">({shifts.length})</span>
+          <h2 className="mb-3 text-lg font-medium text-fg">
+            Shifts <span className="text-sm text-fg-subtle">({shifts.length})</span>
           </h2>
           <ShiftForm onAdd={addShift} />
           {shifts.length === 0 ? (
-            <p className="text-sm text-gray-500">No shifts yet.</p>
+            <p className="rounded-xl border border-dashed border-line bg-raised p-6 text-center text-sm text-fg-subtle">
+              No shifts yet.
+            </p>
           ) : (
-            <ul className="flex flex-col gap-2">
+            <ul className="flex flex-col gap-4">
               {shifts.map((shift) => (
                 <ShiftCard key={shift.id} shift={shift} onRemove={removeShift} />
               ))}

@@ -3,28 +3,31 @@ import { windowKey } from '../lib/windows'
 
 function EmployeeCard({ employee, onRemove, onAddUnavailability, onRemoveUnavailability }) {
   return (
-    <li className="rounded border p-3">
-      <div className="flex items-start justify-between gap-2">
+    <li className="rounded-xl border border-line bg-surface p-5">
+      <div className="flex items-start justify-between gap-3">
         <div>
-          <span className="font-medium">{employee.name}</span>
-          <span className="ml-2 text-sm text-gray-600">
+          <div className="font-medium text-fg">{employee.name}</div>
+          <div className="mt-0.5 text-sm text-fg-muted">
             max {employee.maxHours}h/week
-          </span>
+          </div>
         </div>
         <button
           onClick={() => onRemove(employee.id)}
-          className="text-sm text-gray-500 hover:text-red-700"
+          className="text-sm text-fg-muted transition-colors hover:text-red"
         >
           Remove
         </button>
       </div>
 
-      <div className="mt-1 flex flex-wrap gap-1">
+      <div className="mt-4 flex flex-wrap gap-1.5">
         {employee.skills.length === 0 ? (
-          <span className="text-sm text-gray-500">no skills</span>
+          <span className="text-xs text-fg-subtle">No skills</span>
         ) : (
           employee.skills.map((skill) => (
-            <span key={skill} className="rounded bg-gray-200 px-2 py-0.5 text-xs">
+            <span
+              key={skill}
+              className="rounded-md bg-raised px-2 py-1 text-xs text-fg-muted"
+            >
               {skill}
             </span>
           ))
@@ -32,21 +35,28 @@ function EmployeeCard({ employee, onRemove, onAddUnavailability, onRemoveUnavail
       </div>
 
       {employee.unavailability.length > 0 && (
-        <ul className="mt-1 text-sm text-gray-600">
-          {employee.unavailability.map((window) => (
-            <li key={windowKey(window)} className="flex items-center gap-2">
-              <span>
-                unavailable {window.dayOfWeek} {window.start}-{window.end}
-              </span>
-              <button
-                onClick={() => onRemoveUnavailability(employee.id, window)}
-                className="text-xs text-gray-500 hover:text-red-700"
+        <div className="mt-4">
+          <div className="mb-1.5 text-xs text-fg-subtle">Unavailable</div>
+          <ul className="flex flex-col gap-1">
+            {employee.unavailability.map((window) => (
+              <li
+                key={windowKey(window)}
+                className="flex items-center justify-between gap-2 rounded-md bg-raised px-2 py-1 text-xs"
               >
-                remove
-              </button>
-            </li>
-          ))}
-        </ul>
+                <span className="text-fg-muted">
+                  <span className="text-fg-subtle">{window.dayOfWeek}</span>{' '}
+                  {window.start}–{window.end}
+                </span>
+                <button
+                  onClick={() => onRemoveUnavailability(employee.id, window)}
+                  className="text-fg-subtle transition-colors hover:text-red"
+                >
+                  Remove
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
 
       <UnavailabilityForm
