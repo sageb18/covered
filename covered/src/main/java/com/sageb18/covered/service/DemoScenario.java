@@ -34,8 +34,11 @@ public final class DemoScenario {
                 List.of(
                         new EmployeeDto(SAGE, "Sage", 20, Set.of("BARISTA", "CLOSER"), List.of()),
                         new EmployeeDto(MEGU, "Megu", 30, Set.of("CASHIER", "OPENER"), List.of()),
-                        // Bon can't work Monday mornings, which forces the Monday barista shift onto Sage
-                        new EmployeeDto(BON, "Bon", 25, Set.of("BARISTA", "CASHIER"),
+                        // Bon can't work Monday mornings, which forces the Monday barista shift onto Sage.
+                        // Bon also closes: without a second CLOSER the Monday closing shift would have to
+                        // stack onto Sage's eight-hour morning, and a 14-hour day now breaches the daily
+                        // ceiling -- the example would load as "no valid schedule".
+                        new EmployeeDto(BON, "Bon", 25, Set.of("BARISTA", "CASHIER", "CLOSER"),
                                 List.of(new UnavailabilityDto(DayOfWeek.MONDAY,
                                         LocalTime.of(8, 0), LocalTime.of(12, 0))))),
                 List.of(
@@ -45,7 +48,10 @@ public final class DemoScenario {
                                 LocalTime.of(9, 0), LocalTime.of(17, 0), "CASHIER"),
                         new ShiftDto(CLOSER_MON, DayOfWeek.MONDAY,
                                 LocalTime.of(17, 0), LocalTime.of(23, 0), "CLOSER"),
+                        // Nine hours, so whoever takes it runs an hour into overtime. Nobody can split a
+                        // single shift, so the example always comes back feasible with one warning --
+                        // which is the point: it shows the soft rule without looking broken.
                         new ShiftDto(BARISTA_TUE, DayOfWeek.TUESDAY,
-                                LocalTime.of(9, 0), LocalTime.of(17, 0), "BARISTA")));
+                                LocalTime.of(9, 0), LocalTime.of(18, 0), "BARISTA")));
     }
 }

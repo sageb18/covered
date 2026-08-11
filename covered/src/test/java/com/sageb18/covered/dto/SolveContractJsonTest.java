@@ -123,5 +123,23 @@ class SolveContractJsonTest {
         assertThat(json).contains("\"feasible\":false", "\"hardScore\":-2", "\"softScore\":0");
         assertThat(json).contains("\"shiftId\":\"" + shiftId + "\"", "\"employeeId\":\"" + employeeId + "\"");
         assertThat(json).contains("\"constraint\":\"Missing required skill\"", "\"count\":2");
+        // present even when there is nothing to warn about, so the client can read it unguarded
+        assertThat(json).contains("\"warnings\":[]");
+    }
+
+    @Test
+    @DisplayName("warnings serialise alongside a feasible schedule, separately from violations")
+    void serialisesWarnings() throws Exception {
+        SolveResponse response = new SolveResponse(true, 0, -60,
+                List.of(),
+                List.of(),
+                List.of(new ViolationDto("Daily overtime", 1)));
+
+        String json = objectMapper.writeValueAsString(response);
+
+        // a soft breach must not make the schedule look broken
+        assertThat(json).contains("\"feasible\":true", "\"hardScore\":0", "\"softScore\":-60");
+        assertThat(json).contains("\"violations\":[]");
+        assertThat(json).contains("\"warnings\":[{\"constraint\":\"Daily overtime\",\"count\":1}]");
     }
 }

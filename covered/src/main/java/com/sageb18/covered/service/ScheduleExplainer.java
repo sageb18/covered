@@ -7,13 +7,14 @@ import com.sageb18.covered.model.ShiftAssignment;
 import com.sageb18.covered.model.UnavailabilityWindow;
 import org.springframework.stereotype.Component;
 
+import java.time.DayOfWeek;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
 /**
- * Explains a solved schedule: which hard rules are broken, and how many times.
+ * Explains a solved schedule: which rules are broken, and how many times.
  *
  * Timefold would normally tell us this itself, but score analysis is a paid commercial feature on
  * Timefold 2.x versions.
@@ -21,18 +22,32 @@ import java.util.Map;
 @Component
 public class ScheduleExplainer {
 
-    public List<ViolationDto> explain(Schedule solution) {
+    /**
+     * Hard breaches and soft ones, kept apart. Violations mean the schedule is unusable;
+     * warnings mean it is usable but not ideal, so the UI can show them on a schedule that
+     * was still found.
+     */
+    public record Explanation(List<ViolationDto> violations, List<ViolationDto> warnings) {
+    }
+
+    public Explanation explain(Schedule solution) {
         // an unassigned shift cannot break any of these rules, and would NPE below
         List<ShiftAssignment> assigned = solution.getShiftAssignments().stream()
                 .filter(assignment -> assignment.getEmployee() != null)
                 .toList();
 
-        Map<String, Integer> counts = new LinkedHashMap<>();
-        countMissingSkills(assigned, counts);
-        countOverlaps(assigned, counts);
-        countMaxHoursBreaches(assigned, counts);
-        countUnavailabilityBreaches(assigned, solution.getUnavailabilityWindows(), counts);
+        Map<String, Integer> hard = new LinkedHashMap<>();
+        Map<String, Integer> soft = new LinkedHashMap<>();
+        countMissingSkills(assigned, hard);
+        countOverlaps(assigned, hard);
+        countMaxHoursBreaches(assigned, hard);
+        countUnavailabilityBreaches(assigned, solution.getUnavailabilityWindows(), hard);
+        countDailyBreaches(assigned, hard, soft);
 
+        return new Explanation(toViolations(hard), toViolations(soft));
+    }
+
+    private static List<ViolationDto> toViolations(Map<String, Integer> counts) {
         List<ViolationDto> violations = new ArrayList<>(counts.size());
         counts.forEach((constraint, count) -> violations.add(new ViolationDto(constraint, count)));
         return List.copyOf(violations);
@@ -71,6 +86,30 @@ public class ScheduleExplainer {
         minutesByEmployee.forEach((employee, totalMinutes) -> {
             if (totalMinutes > employee.getMaxHours() * 60) {
                 bump(counts, ConstraintNames.MAX_HOURS_EXCEEDED);
+            }
+        });
+    }
+
+    /**
+     * mirrors dailyHoursExceeded and dailyOvertime: both group by (employee, day), so one match
+     * each per employee-day over the relevant threshold. A day past the hard ceiling trips both,
+     * exactly as it does in the solver.
+     */
+    private void countDailyBreaches(List<ShiftAssignment> assigned,
+                                    Map<String, Integer> hard,
+                                    Map<String, Integer> soft) {
+        Map<Map.Entry<Employee, DayOfWeek>, Integer> minutesByEmployeeDay = new LinkedHashMap<>();
+        for (ShiftAssignment assignment : assigned) {
+            minutesByEmployeeDay.merge(
+                    Map.entry(assignment.getEmployee(), assignment.getShift().getDayOfWeek()),
+                    assignment.getShift().getDurationMinutes(), Integer::sum);
+        }
+        minutesByEmployeeDay.forEach((employeeDay, dayMinutes) -> {
+            if (dayMinutes > ScheduleConstraintProvider.MAX_DAY_MINUTES) {
+                bump(hard, ConstraintNames.DAILY_HOURS_EXCEEDED);
+            }
+            if (dayMinutes > ScheduleConstraintProvider.STANDARD_DAY_MINUTES) {
+                bump(soft, ConstraintNames.DAILY_OVERTIME);
             }
         });
     }
