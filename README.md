@@ -39,62 +39,6 @@ Hard constraints must all be satisfied for a schedule to be *feasible*. Soft con
 
 The two daily constraints are layered deliberately: `Max hours exceeded` sums the whole week and would happily allow a 14-hour Monday under a 40-hour cap, so `Daily hours exceeded` adds a per-day ceiling and `Daily overtime` penalises the grace band between them.
 
-## Architecture
-
-```
-covered/                        Spring Boot backend (Java 21)
-  model/                        JPA entities + Timefold planning classes
-  service/                      Constraints, DTO↔solver boundary, score explanation
-  controller/                   REST endpoints + error handling
-  dto/                          The JSON contract
-
-covered-frontend/               React 19 + Vite + Tailwind
-
-Dockerfile                      3-stage build: React → jar → JRE runtime
-```
-
-## API
-
-**`POST /api/solve`**
-
-```json
-{
-  "employees": [{
-    "id": "3f1a...",
-    "name": "Ada",
-    "maxHours": 40,
-    "skills": ["barista"],
-    "unavailability": [{ "dayOfWeek": "MONDAY", "start": "12:00", "end": "14:00" }]
-  }],
-  "shifts": [{
-    "id": "9c2b...",
-    "dayOfWeek": "MONDAY",
-    "start": "08:00",
-    "end": "14:00",
-    "requiredSkill": "barista"
-  }]
-}
-```
-
-```json
-{
-  "feasible": true,
-  "hardScore": 0,
-  "softScore": -30,
-  "assignments": [{ "shiftId": "9c2b...", "employeeId": "3f1a..." }],
-  "violations": [],
-  "warnings": [{ "constraint": "Daily overtime", "count": 1 }]
-}
-```
-
-`feasible` is true exactly when `hardScore` is 0.
-
-| Endpoint | Purpose |
-|---|---|
-| `POST /api/solve` | Solve a scenario |
-| `GET /api/demo-scenario` | Pre-built scenario to load into the UI |
-| `GET /actuator/health` | Health check |
-
 ## Running locally
 
 **Docker**: the whole thing, exactly as deployed:
