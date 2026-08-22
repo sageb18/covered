@@ -11,7 +11,7 @@
 
 ![Covered](assets/covered-image.png)
 
-> The demo runs on a free tier that sleeps after 15 minutes idle, so  the first request may take up to a minute to wake and also produce a worst schedule than if you were to run it locally.
+> The demo runs on a free tier on Render that sleeps after 15 minutes idle. So, the first request may take up to a minute to wake and also produce a worse schedule than if you were to run it locally.
 
 ---
 
